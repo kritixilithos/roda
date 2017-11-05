@@ -47,7 +47,7 @@ Funktioita voi putkittaa `|`-operaattorilla, jolloin niiden sisään- ja ulostul
 Seuraava ohjelma tulostaa kahtena tiedoston "tieto.txt" ensimmäisen rivin:
 
 ```sh
-cat "tieto.txt" | duplicate
+readLines "tieto.txt" | duplicate
 ```
 
 Jos kaikki rivit haluttaisiin kahdentaa, olisi tehtävä uusi versio duplicate-funktiosta, joka lukee
@@ -55,7 +55,7 @@ kaiken mahdollisen syötteen:
 
 ```sh
 duplicate {
-	for value; do
+	for value do
 		push value
 		push value
 	done
@@ -99,8 +99,8 @@ Funktiolla voi ottaa vaihtelevan määrän argumentteja, jolloin viimeiselle par
 
 ```sh
 duplicate_files files... {
-	for file in files; do
-		cat file | duplicate
+	for file in files do
+		readLines file | duplicate
 	done
 }
 ```
@@ -147,7 +147,7 @@ Oletusarvoparametreja voi määritellä myös `...`-merkkien jälkeen.
 Muuttujaparametrien lisäksi funktiolla voi olla tyyppiparametreja, joille pitää antaa funktiokutsussa
 arvot muiden parametrien tapaan:
 
-```sh
+```c
 init_list<<T>> &variable {
 	variable := new list<<T>>
 }
@@ -230,7 +230,7 @@ myös tyhjä.
 
 ```sh
 tulosta_perheenjäsenet sukunimi, etunimet... {
-	for etunimi in etunimet; do
+	for etunimi in etunimet do
 		push etunimi, " ", sukunimi, "\n"
 	done
 }
@@ -271,7 +271,7 @@ korosta("kissa", väri="#2388ff")
 Jos funktiolle on määritelty tyyppiparametreja, sille on annettava kutsun yhteydessä vastaava määrä
 tyyppiargumentteja:
 
-```sh
+```c
 init_list<<string>> sisarukset
 sisarukset += "Joonas"
 sisarukset += "Amelie"
@@ -281,7 +281,7 @@ sisarukset += "Amelie"
 
 Listan "kutsuminen" työntää kaikki listan alkiot ulostulovirtaan:
 ```sh
-["rivi1\n", "rivi2\n", "rivi3\n"] | writeLines tiedosto
+["rivi1\n", "rivi2\n", "rivi3\n"] | writeStrings tiedosto
 ```
 
 Listan kutsumiseen perustuu `[`- ja `]`-merkkien käyttö ehtolauseissa.
@@ -299,6 +299,7 @@ Muuttujalle voi asettaa uuden arvon operaattorilla **`=`**:
 ```sh
 ikä = 74
 tytöt[1] = "Liisa"
+tytöt[2:4] = ["Kaisa", "Elina"]
 ```
 
 Listaan voi lisätä arvon operaattorilla **`+=`**:
@@ -337,7 +338,7 @@ push nimi /* tulostaa Lissun */
 ```
 Muuttujan voi tuhota kokonaan käyttäen silmukkaa ja `?`-operaattoria, joka kertoo, onko muuttuja olemassa.
 ```sh
-while nimi?; do
+while nimi? do
 	undefine nimi
 done
 ```
@@ -355,6 +356,7 @@ Seuraavaksi vielä kaikki muuttujaoperaattorit taulukossa:
 | `~=`        | `nimi ~= "ae", "ä"` | Tekee annetut korvaukset merkkijonoon, toimii kuten funktio `replace`. |
 | `+=`, `-=`, `*=`, `/=` | `pisteet *= 2` | Suorittaa laskutoimituksen lukumuuttujalla. |
 | `++`, `--`  | `varallisuus --`   | Kasvattaa tai vähentää lukumuuttujan arvoa.        |
+| `del`       | `del tytöt[2:4]`   | Poistaa listasta alkion tai alkioita.              |
 
 #### Ohjausrakenteet
 
@@ -368,13 +370,13 @@ Muut arvot tulkitaan aina samoin kuin `true`. Jos lause palauttaa useita arvoja,
 Sisäänrakennetuista funktioista vain `true`, `false`, `test`, `random` ja `file` (ks. alempana) palauttavat totuusarvon.
 
 ```sh
-if [ ikä < 18 ]; do
+if [ ikä < 18 ] do
 	push "Olet liian nuori!\n"
 done
 ```
 
 ```sh
-while [ not ( vastaus =~ "kyllä|ei" ) ]; do
+while [ not ( vastaus =~ "kyllä|ei" ) ] do
 	push "Vastaa kyllä tai ei: "
 	pull vastaus
 done
@@ -441,7 +443,7 @@ done
 `try` suorittaa annetun komennon tai lohkon ja ohittaa hiljaisesti kaikki vastaan tulleet virheet.
 
 ```sh
-while true; do
+while true do
 	try do
 		hae viestit
 		käsittele viestit
@@ -467,8 +469,8 @@ done
 
 ```sh
 haeSyntymävuodellaYksiTyttö vuosi {
-	for tyttö in tytöt; do
-		if [ tyttö[1] = vuosi ]; do
+	for tyttö in tytöt do
+		if [ tyttö[1] = vuosi ] do
 			return tyttö
 		done
 	done
@@ -544,7 +546,7 @@ iät["Ilmari"] = 19
 `?`-operaattorilla voi tarkastaa, onko kartassa tietty alkio:
 
 ```sh
-if push(!iät["Maija"]?); do
+unless [ iät["Maija"]? ] do
 	push "Maijan ikää ei löydy!\n"
 done
 ```
@@ -565,9 +567,9 @@ vai kartta):
 | `[]?`       | Kertoo, onko alkio olemassa | Listan tai kartan ja tunnisteen   | Totuusarvon            |
 | `in`        | Kertoo, onko listassa arvo  | Minkä tahansa arvon               | Totuusarvon            |
 | `is`        | Kertoo, onko arvo tiettyä tyyppiä | Minkä tahansa arvon ja tyypin | Totuusarvon          |
-| `&&`        | Looginen JA                 | 2 totuusarvoa     | Totuusarvon   |
-| `||`        | Looginen TAI                | 2 totuusarvoa     | Totuusarvon   |
-| `^^`        | Looginen JOKO-TAI           | 2 totuusarvoa     | Totuusarvon   |
+| `and`       | Looginen JA                 | 2 totuusarvoa     | Totuusarvon   |
+| `or`        | Looginen TAI                | 2 totuusarvoa     | Totuusarvon   |
+| `xor`       | Looginen JOKO-TAI           | 2 totuusarvoa     | Totuusarvon   |
 | `=`         | Yhtäsuuruus                 | Mitä tahansa      | Totuusarvon   |
 | `!=`        | Erisuuruus                  | Mitä tahansa      | Totuusarvon   |
 | `<`         | Pienempi kuin               | 2 lukua           | Totuusarvon   |
@@ -603,7 +605,7 @@ Laskujärjestys:
 | 7.   | `&`                                                         |
 | 8.   | `..`                                                       |
 | 9.   | `=`, `!=`                                                  |
-| 10.  | `&&`, `||`, `^^`                                           |
+| 10.  | `and`, `or`, `xor`                                        |
 
 #### Komento
 
@@ -615,7 +617,7 @@ Seuraava ohjelma tulostaa tiedoston rivinumeroiden kera.
 ```sh
 rivit := [readLines(tiedosto)]
 i := 1
-for rivi in rivit; do
+for rivi in rivit do
 	push i, " ", rivi, "\n"
 	i ++
 done
@@ -625,7 +627,7 @@ Jos on varmaa, että funktio antaa vain yhden arvon, voi hakasulkeet jättää p
 tulee listan ainoa arvo. Tämä heittää virheen, jos funktio palauttaa useampia arvoja (tai ei yhtään).
 
 ```sh
-A := expr("PI*"r"**2")
+kaksi := parseInteger("2")
 ```
 
 #### Nimetön funktio
@@ -636,8 +638,8 @@ Seuraavassa koodissa määritellään `filter`-funktio, joka lukee arvoja ja pal
 
 ```sh
 filter condFunction {
-	for value; do
-		if condFunction value; do
+	for value do
+		if condFunction value do
 			push value
 		done
 	done
@@ -649,7 +651,7 @@ Funktiota käytetään antamalla sille nimetön funktio (tai tavallinenkin funkt
 
 ```sh
 tytöt := [["Annamari", 1996], ["Reetta", 1992], ["Vilma", 1999]]
-tytöt | filter { |tyttö|; [ tyttö[1] > 1995 ] } | for tyttö; do
+tytöt | filter { |tyttö|; [ tyttö[1] > 1995 ] } | for tyttö do
 	push tyttö[0], " on vielä nuori.\n"
 done
 ```
@@ -668,7 +670,7 @@ record R {
 
 ...
 
-reflect R.fields /* palauttaa listan, jossa on kaksi field-oliota, yksi a:lle ja toinen b:lle */
+(reflect R).fields /* palauttaa listan, jossa on kaksi field-oliota, yksi a:lle ja toinen b:lle */
 ```
 
 `typeof` toimii samoin, mutta ottaa tyyppinimen sijasta arvon ja palauttaa sen tyypin.
@@ -676,7 +678,7 @@ reflect R.fields /* palauttaa listan, jossa on kaksi field-oliota, yksi a:lle ja
 ## Esimerkkejä
 
 ```sh
-push ENV["PATH"] | split :s, ":" | exec :I, :l, "ls", dir for dir | createGlobal komento, { |a...|; exec komento, *a } for komento
+push ENV["PATH"] | split sep=":" | ls dir for dir | createGlobal komento, { |a...|; exec komento, *a } for komento
 ```
 
 Etsii kaikki komentorivikomennot ja tekee jokaisesta funktion. Tämän jälkeen komentoja voi käyttää suoraan ilman
